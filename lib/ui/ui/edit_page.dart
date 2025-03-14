@@ -1,6 +1,7 @@
 part of '../pages.dart';
 
 class EditPage extends StatefulWidget {
+
   const EditPage({super.key});
 
   @override
@@ -8,9 +9,18 @@ class EditPage extends StatefulWidget {
 }
 
 class _EditPageState extends State<EditPage> {
-  final title = TextEditingController();
-  final subtitle = TextEditingController();
+  final FirebaseService _firebaseService = FirebaseService();
+  final _titleController = TextEditingController();
+  final _subtitleController = TextEditingController();
+  bool isLoading = true;
   int index = 0;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,17 +31,22 @@ class _EditPageState extends State<EditPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // text
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text('Edit Page', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w500, color: Colors.blue),),
+              child: Text('Edit Tasks', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w500, color: Colors.blue),),
             ),
             SizedBox(height: 20),
+            // title form
             titleWidget(),
             SizedBox(height: 20),
+            // subtitle form
             subtitleWidget(),
             SizedBox(height: 20),
+            // choose image
             chooseImage(),
             SizedBox(height: 20),
+            // button
             buttonAddCancel()
           ],
         ),
@@ -106,7 +121,7 @@ class _EditPageState extends State<EditPage> {
         decoration: BoxDecoration(
             color: Colors.white, borderRadius: BorderRadius.circular(15)),
         child: TextFormField(
-          controller: title,
+          controller: _titleController,
           keyboardType: TextInputType.text,
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(
@@ -132,7 +147,7 @@ class _EditPageState extends State<EditPage> {
             color: Colors.white, borderRadius: BorderRadius.circular(15)),
         child: TextFormField(
           maxLines: 3,
-          controller: subtitle,
+          controller: _subtitleController,
           keyboardType: TextInputType.text,
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(

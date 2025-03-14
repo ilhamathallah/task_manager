@@ -48,7 +48,7 @@ class FirebaseService {
     return userDoc.data() as Map<String, dynamic>;
   }
 
-  Future<void> addNote(String title, String subtitle) async {
+  Future<void> addTask(String title, String subtitle) async {
     String? userId = _auth.currentUser!.uid;
     DateTime time = new DateTime.now();
     if (userId != null) {
@@ -66,7 +66,7 @@ class FirebaseService {
     }
   }
 
-  Stream<QuerySnapshot> getNotes() {
+  Stream<QuerySnapshot> getTask() {
     String? userId = _auth.currentUser!.uid;
     if (userId != null) {
       return FirebaseFirestore.instance
@@ -87,5 +87,15 @@ class FirebaseService {
         .update(newData);
   }
 
-  
+  Future<void> updateTask(
+      String noteId, String title, String subtitle) async {
+    String? userId = _auth.currentUser!.uid;
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('task')
+        .doc(noteId)
+        .update({"title": title, "subtitle": subtitle});
+  }
+
 }

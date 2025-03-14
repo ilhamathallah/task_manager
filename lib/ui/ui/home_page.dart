@@ -15,9 +15,8 @@ class _HomePageState extends State<HomePage> {
 
   final FirebaseService _auth = FirebaseService();
   final FirebaseService _firebaseService = FirebaseService();
-  final TextEditingController _noteController = TextEditingController();
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _subtitleController = TextEditingController();
 
   @override
   void initState() {
@@ -34,8 +33,61 @@ class _HomePageState extends State<HomePage> {
     Navigator.pushReplacementNamed(context, '/login');
   }
 
-
   bool show = true;
+
+  void _updateNote(
+      String noteId, String title, String subtitle) async {
+    _titleController.text = title;
+    _subtitleController.text = subtitle;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Text('Update Note'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              // children: cardTaskManager(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.red)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                _firebaseService.updateTask(
+                  noteId,
+                  _titleController.text,
+                  _subtitleController.text,
+                );
+                Navigator.pop(context);
+                _clearFields();
+              },
+              child: const Text(
+                'Update',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _clearFields() {
+    _titleController.clear();
+    _subtitleController.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +168,7 @@ class _HomePageState extends State<HomePage> {
               },
               child: Expanded(
                 child: StreamBuilder<QuerySnapshot>(
-                  stream: _firebaseService.getNotes(),
+                  stream: _firebaseService.getTask(),
                   builder: (context, snapshot){
                     if(snapshot.connectionState == ConnectionState.waiting){
                       return Center(child: CircularProgressIndicator(),
@@ -328,7 +380,7 @@ class _HomePageState extends State<HomePage> {
                                         : (data['time'] ?? '--:--').toString(),
                                     style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 16,
+                                        fontSize: 15,
                                         fontWeight: FontWeight.bold),
                                   ),
                                 ],
@@ -345,7 +397,7 @@ class _HomePageState extends State<HomePage> {
                               width: 90,
                               height: 28,
                               decoration: BoxDecoration(
-                                  color: Colors.grey[300],
+                                  color: Colors.grey[200],
                                   borderRadius: BorderRadius.circular(18)),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(

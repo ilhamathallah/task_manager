@@ -17,7 +17,7 @@ class _AddPageState extends State<AddPage> {
   void _addNote() async {
     if (title.text.isNotEmpty &&
         subtitle.text.isNotEmpty) {
-      await _firebaseService.addNote(
+      await _firebaseService.addTask(
         title.text,
         subtitle.text
       );
@@ -36,8 +36,14 @@ class _AddPageState extends State<AddPage> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text('Add Tasks', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w500, color: Colors.blue),),
+            ),
+            SizedBox(height: 20),
             titleWidget(),
             SizedBox(height: 20),
             subtitleWidget(),
