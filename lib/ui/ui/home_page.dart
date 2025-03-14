@@ -7,6 +7,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+bool isDone = true;
+
 class _HomePageState extends State<HomePage> {
   String? userId;
   late Future<Map<String, dynamic>> userData;
@@ -32,14 +34,8 @@ class _HomePageState extends State<HomePage> {
     Navigator.pushReplacementNamed(context, '/login');
   }
 
-  void _addNote() async {
-    if (_titleController.text.isEmpty || _descriptionController.text.isEmpty) {
-      return null;
-    } else {
-      await _firebaseService.addNote(
-          _titleController.text, _descriptionController.text);
-    }
-  }
+
+  bool show = true;
 
   @override
   Widget build(BuildContext context) {
@@ -103,108 +99,65 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            body: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Card(
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        side: BorderSide(color: Colors.amber, width: 2),
-                        borderRadius: BorderRadius.circular(20)),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'lorem ipsum dolor',
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w500),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                              Icon(Icons.more_horiz_rounded)
-                            ],
+            body: SafeArea(
+                child: NotificationListener<UserScrollNotification>(
+              onNotification: (notification) {
+                if (notification.direction == ScrollDirection.forward) {
+                  setState(() {
+                    show = true;
+                  });
+                }
+                if (notification.direction == ScrollDirection.reverse) {
+                  setState(() {
+                    show = false;
+                  });
+                }
+                return true;
+              },
+              child: Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: _firebaseService.getNotes(),
+                  builder: (context, snapshot){
+                    if(snapshot.connectionState == ConnectionState.waiting){
+                      return Center(child: CircularProgressIndicator(),
+                      );
+                    }
+                    if(snapshot.hasError){
+                      return Center(child: Text('Error fetching data'));
+                    }
+                    if(!snapshot.hasData || snapshot.data!.docs.isEmpty){
+                      return Center(
+                        child: Text('No task found',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500
                           ),
-                          SizedBox(height: 5),
-                          Text(
-                            'industry. Lorem Ipsum has been the industry'
-                            ' standard dummy text ever since the 1500s, when an'
-                            ' unknown printer took a galley of type and scrambled it to make a type',
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 2,
-                          ),
-                          SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.calendar_month_outlined,
-                                    size: 20,
-                                  ),
-                                  SizedBox(
-                                    width: 5,
-                                  ),
-                                  Text(
-                                    '12 feb 2025',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.w500),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Card(
-                                    color: Colors.pinkAccent,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 4),
-                                      child: Text(
-                                        'High',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12),
-                                      ),
-                                    ),
-                                  ),
-                                  Card(
-                                    color: Colors.pinkAccent,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 4),
-                                      child: Text(
-                                        'On track',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          )
-                        ],
-                      ),
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      itemCount: snapshot.data!.docs.length,
+                        itemBuilder: (context, index){
+                        DocumentSnapshot document = snapshot.data!.docs[index];
+                        return cardTaskManager(document);
+                        });
+                  }
+                ),
+              ),
+            )),
+            floatingActionButton: Visibility(
+              visible: show,
+              child: FloatingActionButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => AddPage(),
                     ),
-                  ),
-                )
-              ],
-            ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {},
-              backgroundColor: Colors.amber,
-              child: Icon(Icons.add, color: Colors.white, size: 30),
+                  );
+                },
+                backgroundColor: Colors.blue,
+                child: Icon(Icons.add, color: Colors.white, size: 30),
+              ),
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
             drawer: Drawer(
@@ -282,4 +235,152 @@ class _HomePageState extends State<HomePage> {
           );
         });
   }
+
+  Widget cardTaskManager(DocumentSnapshot document) {
+    var data = document.data() as Map<String, dynamic>;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      child: Container(
+        width: double.infinity,
+        height: 140,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 5,
+                  blurRadius: 7,
+                  offset: Offset(0, 2))
+            ]),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            children: [
+              // image
+              Container(
+                width: 100,
+                height: 130,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  image: DecorationImage(
+                    image: AssetImage('assets/image/note.png'),
+                  ),
+                ),
+              ),
+              SizedBox(width: 25),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          data['title'] ?? 'No Title',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        Checkbox(
+                            value: data['isDone'] ?? false,
+                            onChanged: (value) {
+                              setState(() {
+                                isDone = !isDone;
+                              });
+                            },
+                        )
+                      ],
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      data['subtitle'] ?? 'No Description',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade400),
+                    ),
+                    Spacer(),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 105,
+                            height: 30,
+                            decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(18)),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time_rounded,
+                                    color: Colors.white,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    data['time'] is Timestamp
+                                        ? DateFormat('HH:mm').format((data['time'] as Timestamp).toDate()) // Format hanya jam & menit
+                                        : (data['time'] ?? '--:--').toString(),
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => EditPage()));
+                            },
+                            child: Container(
+                              width: 90,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(18)),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.edit,
+                                      color: Colors.blue,
+                                    ),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      'Edit',
+                                      style: TextStyle(
+                                          color: Colors.blue,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 }
