@@ -1,8 +1,11 @@
 part of '../pages.dart';
 
 class EditPage extends StatefulWidget {
+  final String taskId;
+  final String title;
+  final String subtitle;
 
-  const EditPage({super.key});
+  EditPage({required this.taskId, required this.title, required this.subtitle});
 
   @override
   State<EditPage> createState() => _EditPageState();
@@ -10,8 +13,8 @@ class EditPage extends StatefulWidget {
 
 class _EditPageState extends State<EditPage> {
   final FirebaseService _firebaseService = FirebaseService();
-  final _titleController = TextEditingController();
-  final _subtitleController = TextEditingController();
+  late TextEditingController _titleController;
+  late TextEditingController _subtitleController;
   bool isLoading = true;
   int index = 0;
 
@@ -19,7 +22,22 @@ class _EditPageState extends State<EditPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    _titleController = TextEditingController(text: widget.title);
+    _subtitleController = TextEditingController(text: widget.subtitle);
+  }
 
+  void _editTask() async {
+    try {
+      await _firebaseService.editTask(widget.taskId, _titleController.text, _subtitleController.text);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Task berhasil diperbarui')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengupdate task: $e')),
+      );
+    }
   }
 
   @override
@@ -43,9 +61,6 @@ class _EditPageState extends State<EditPage> {
             // subtitle form
             subtitleWidget(),
             SizedBox(height: 20),
-            // choose image
-            chooseImage(),
-            SizedBox(height: 20),
             // button
             buttonAddCancel()
           ],
@@ -64,7 +79,7 @@ class _EditPageState extends State<EditPage> {
               minimumSize: Size(170, 48)
           ),
           onPressed: (){
-            Navigator.pop(context);
+            _editTask();
           },
           child: Text('Edit task', style: TextStyle(color: Colors.white),),
         ),
@@ -79,38 +94,6 @@ class _EditPageState extends State<EditPage> {
           child: Text('Cancel', style: TextStyle(color: Colors.white),),
         ),
       ],
-    );
-  }
-
-  Widget chooseImage(){
-    return Container(
-      height: 180,
-      child: ListView.builder(
-          itemCount: 4,
-          scrollDirection: Axis.horizontal,
-          itemBuilder: (context, index) {
-            return GestureDetector(
-              onDoubleTap: (){
-                index = index;
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                      width: 2,
-                      color: index == index ? Colors.blue : Colors.grey
-                  ),
-                ),
-                width: 140,
-                margin: EdgeInsets.all(8),
-                child: Column(
-                  children: [
-                    Image.asset('assets/image/note.png'),
-                  ],
-                ),
-              ),
-            );
-          }),
     );
   }
 

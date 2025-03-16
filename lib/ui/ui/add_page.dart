@@ -14,7 +14,7 @@ class _AddPageState extends State<AddPage> {
   final FirebaseService _firebaseService = FirebaseService();
   int index = 0;
 
-  void _addNote() async {
+  void _addTask() async {
     if (title.text.isNotEmpty &&
         subtitle.text.isNotEmpty) {
       await _firebaseService.addTask(
@@ -48,8 +48,6 @@ class _AddPageState extends State<AddPage> {
             SizedBox(height: 20),
             subtitleWidget(),
             SizedBox(height: 20),
-            chooseImage(),
-            SizedBox(height: 20),
             buttonAddCancel()
           ],
         ),
@@ -67,7 +65,7 @@ class _AddPageState extends State<AddPage> {
               minimumSize: Size(170, 48)
           ),
           onPressed: (){
-            _addNote();
+            _addTask();
             Navigator.pop(context);
           },
           child: Text('add task', style: TextStyle(color: Colors.white),),
@@ -83,38 +81,6 @@ class _AddPageState extends State<AddPage> {
           child: Text('Cancel', style: TextStyle(color: Colors.white),),
         ),
       ],
-    );
-  }
-
-  Widget chooseImage(){
-    return Container(
-      height: 180,
-      child: ListView.builder(
-          itemCount: 4,
-          scrollDirection: Axis.horizontal,
-          itemBuilder: (context, index) {
-            return GestureDetector(
-              onDoubleTap: (){
-                index = index;
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                      width: 2,
-                      color: index == index ? Colors.blue : Colors.grey
-                  ),
-                ),
-                width: 140,
-                margin: EdgeInsets.all(8),
-                child: Column(
-                  children: [
-                    Image.asset('assets/image/note.png'),
-                  ],
-                ),
-              ),
-            );
-          }),
     );
   }
 

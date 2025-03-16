@@ -21,19 +21,18 @@ class FirebaseService {
 
   Future<User?> signUp(String email, String password) async {
     try {
-      UserCredential userCredential = await _auth
-          .createUserWithEmailAndPassword(email: email, password: password);
-      if (kDebugMode) {
-        print("User : ${userCredential.user}");
-      }
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      print("User created: ${userCredential.user?.email}");
       return userCredential.user;
     } catch (e) {
-      if (kDebugMode) {
-        print(e);
-      }
+      print("Firebase Auth Error: $e");
+      return null;
     }
-    return null;
   }
+
 
   Future<void> signOut() async {
     await _auth.signOut();
@@ -80,22 +79,26 @@ class FirebaseService {
     }
   }
 
-  Future<void> checkTask(String docId, Map<String, dynamic> newData) async {
-    await FirebaseFirestore.instance
-        .collection("task")
-        .doc(docId)
-        .update(newData);
-  }
-
-  Future<void> updateTask(
-      String noteId, String title, String subtitle) async {
+  Future<void> editTask(
+      String taskId, String title, String subtitle) async {
     String? userId = _auth.currentUser!.uid;
     await FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
         .collection('task')
-        .doc(noteId)
+        .doc(taskId)
         .update({"title": title, "subtitle": subtitle});
+  }
+
+  //   delete note
+  Future<void> deleteTask(String taskId) async {
+    String? userId = _auth.currentUser!.uid;
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('task')
+        .doc(taskId)
+        .delete();
   }
 
 }

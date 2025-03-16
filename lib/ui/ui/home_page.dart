@@ -11,6 +11,7 @@ bool isDone = true;
 
 class _HomePageState extends State<HomePage> {
   String? userId;
+  String todayDate = '';
   late Future<Map<String, dynamic>> userData;
 
   final FirebaseService _auth = FirebaseService();
@@ -26,6 +27,9 @@ class _HomePageState extends State<HomePage> {
 
     userId = user!.uid;
     userData = _auth.getUserData(userId!);
+
+    // Atur tanggal tanpa setState, karena initState() tidak perlu update UI
+    todayDate = DateFormat('dd MMMM yyyy').format(DateTime.now());
   }
 
   void _signOut() async {
@@ -35,62 +39,13 @@ class _HomePageState extends State<HomePage> {
 
   bool show = true;
 
-  void _updateNote(
-      String noteId, String title, String subtitle) async {
-    _titleController.text = title;
-    _subtitleController.text = subtitle;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: const Text('Update Note'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              // children: cardTaskManager(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.red)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: () {
-                _firebaseService.updateTask(
-                  noteId,
-                  _titleController.text,
-                  _subtitleController.text,
-                );
-                Navigator.pop(context);
-                _clearFields();
-              },
-              child: const Text(
-                'Update',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _clearFields() {
-    _titleController.clear();
-    _subtitleController.clear();
+  void _deleteTask(String taskId) async {
+    await _firebaseService.deleteTask(taskId);
   }
 
   @override
   Widget build(BuildContext context) {
+
     return FutureBuilder<Map<String, dynamic>>(
         future: userData,
         builder: (context, snapshot) {
@@ -111,43 +66,45 @@ class _HomePageState extends State<HomePage> {
           return Scaffold(
             backgroundColor: Colors.white,
             appBar: AppBar(
-              backgroundColor: Colors.amber,
-              leading: Builder(builder: (context) {
-                return IconButton(
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                  icon: Icon(
-                    Icons.menu_rounded,
-                    size: 35,
-                    color: Colors.white,
-                  ),
-                );
-              }),
-              actions: [
-                Stack(
+              backgroundColor: Colors.blue,
+              title: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.notifications_none,
-                        size: 35,
+                    Text(
+                      'Notes ${snapshot.data!['name']}',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
-                      onPressed: () {},
                     ),
-                    Positioned(
-                      right: 12,
-                      top: 12,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
+                    Text(
+                      "$todayDate",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
+                    SizedBox(height: 15)
                   ],
+                ),
+              ),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.logout,
+                      size: 30,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      _signOut();
+                    },
+                  ),
                 ),
               ],
             ),
@@ -191,7 +148,10 @@ class _HomePageState extends State<HomePage> {
                       itemCount: snapshot.data!.docs.length,
                         itemBuilder: (context, index){
                         DocumentSnapshot document = snapshot.data!.docs[index];
-                        return cardTaskManager(document);
+                        return Dismissible(key: UniqueKey(), onDismissed: (direction){
+                          _deleteTask(document.id);
+                        },
+                            child: cardTaskManager(document));
                         });
                   }
                 ),
@@ -212,78 +172,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-            drawer: Drawer(
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    color: Colors.amber,
-                    child: DrawerHeader(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Welcome',
-                            style: TextStyle(
-                                fontSize: 35,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white),
-                          ),
-                          Text(
-                            '${snapshot.data!['name']}',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.zero,
-                      children: [
-                        ListTile(
-                          title: Text("Menu 1"),
-                          onTap: () {},
-                        ),
-                        ListTile(
-                          title: Text("Menu 2"),
-                          onTap: () {},
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(height: 1, thickness: 1),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        _signOut();
-                      },
-                      icon: Icon(Icons.logout, color: Colors.white),
-                      label: Text(
-                        'Logout',
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
-                        minimumSize: Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           );
         });
   }
@@ -294,7 +182,7 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
       child: Container(
         width: double.infinity,
-        height: 140,
+        height: 170,
         decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             color: Colors.white,
@@ -333,15 +221,9 @@ class _HomePageState extends State<HomePage> {
                           data['title'] ?? 'No Title',
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
-                        Checkbox(
-                            value: data['isDone'] ?? false,
-                            onChanged: (value) {
-                              setState(() {
-                                isDone = !isDone;
-                              });
-                            },
-                        )
                       ],
                     ),
                     SizedBox(height: 5),
@@ -351,7 +233,11 @@ class _HomePageState extends State<HomePage> {
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.grey.shade400),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
                     ),
+                    SizedBox(height: 10),
+                    Container(child: Text('low')),
                     Spacer(),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -391,7 +277,11 @@ class _HomePageState extends State<HomePage> {
                           GestureDetector(
                             onTap: () {
                               Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) => EditPage()));
+                                  builder: (context) => EditPage(
+                                    taskId: document.id,
+                                    title: document['title'],
+                                    subtitle: document['subtitle'],
+                                  )));
                             },
                             child: Container(
                               width: 90,

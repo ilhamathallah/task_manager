@@ -21,32 +21,41 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController confirmPasswordController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
 
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    nameController.dispose();
+    super.dispose();
+  }
+
   void _signUp() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        isLoading = true;
+      });
 
-    setState(() => isLoading = true);
+      try {
+        User? user = await _auth.signUp(emailController.text, passwordController.text);
 
-    try {
-      User? user = await _auth.signUp(emailController.text, passwordController.text);
-      if (user != null) {
-        await _firebaseStore.collection('users').doc(user.uid).set({
-          'email': emailController.text,
-          'name': nameController.text,
-        });
-        if (mounted) {
+        if (user != null) {
+          await _firebaseStore.collection('users').doc(user.uid).set({
+            'email': emailController.text,
+            'name': nameController.text,
+          });
+
           Navigator.pushReplacementNamed(context, '/home');
         }
+      } catch (e) {
+        print("Error: $e");
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Register success! ${user.email}')),
+          SnackBar(content: Text("Error: $e")),
         );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => isLoading = false);
+      } finally {
+        setState(() {
+          isLoading = false;
+        });
       }
     }
   }
@@ -56,228 +65,90 @@ class _SignUpPageState extends State<SignUpPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 30,
-                ),
-                // image
-                Container(
-                  width: double.infinity,
-                  height: 300,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                        image: AssetImage('assets/image/register.jpg'),
-                        fit: BoxFit.cover),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(15.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  SizedBox(height: 30),
+                  Image.asset('assets/image/register.jpg', width: double.infinity, height: 250, fit: BoxFit.cover),
+                  SizedBox(height: 20),
+                  Text('Register', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.blue)),
+                  SizedBox(height: 20),
+
+                  // Email
+                  _buildTextField(
+                    controller: emailController,
+                    hint: "Email",
+                    icon: Icons.email,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Email cannot be empty';
+                      if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}").hasMatch(value)) {
+                        return 'Invalid email format';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-                SizedBox(
-                    height: 20),
-                // name
-                Text('Register',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.blue),),
-                SizedBox(
-                  height: 20,),
-                // email
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child: Container(
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15)),
-                    child: TextFormField(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          Icons.email,
-                          color: Colors.blue,
-                        ),
-                        contentPadding:
-                        EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                        hintText: "Email",
-                        enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide:
-                            BorderSide(color: Colors.black38, width: 2.0)),
-                        focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide:
-                            BorderSide(color: Colors.blue, width: 2.0)),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty)
-                          return 'Email cannot be empty';
-                        if (!RegExp(
-                            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}")
-                            .hasMatch(value)) {
-                          return 'Invalid email format';
-                        }
-                        return null;
-                      },
-                    ),
+
+                  SizedBox(height: 10),
+
+                  // Name
+                  _buildTextField(
+                    controller: nameController,
+                    hint: "Name",
+                    icon: Icons.person,
+                    textInputType: TextInputType.text,
+                    validator: (value) => value == null || value.isEmpty ? 'Name cannot be empty' : null,
                   ),
-                ),
-                SizedBox(height: 10),
-                // name
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child: Container(
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15)),
-                    child: TextFormField(
-                      controller: nameController,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          Icons.face,
-                          color: Colors.blue,
-                        ),
-                        contentPadding:
-                        EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                        hintText: "Name",
-                        enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide:
-                            BorderSide(color: Colors.black38, width: 2.0)),
-                        focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide:
-                            BorderSide(color: Colors.blue, width: 2.0)),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'last name cannot be empty';
-                        }
-                        return null;
-                      },
-                    ),
+
+                  SizedBox(height: 10),
+
+                  // Password
+                  _buildTextField(
+                    controller: passwordController,
+                    hint: "Password",
+                    icon: Icons.lock,
+                    isPassword: true,
+                    validator: (value) {
+                      if (value == null || value.length < 6) return 'Password must be at least 6 characters';
+                      return null;
+                    },
                   ),
-                ),
-                SizedBox(height: 10),
-                // password
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: TextFormField(
-                      controller: passwordController,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.done,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          Icons.password,
-                          color: Colors.blue,
-                        ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                        suffixIcon: IconButton(
-                          onPressed: () => setState(() {
-                            isObscurePassword = !isObscurePassword;
-                          }),
-                          icon: Icon(isObscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility),
-                        ),
-                        hintText: "Password",
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.black38, width: 2.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.blue, width: 2.0),
-                        ),
-                      ),
-                      obscureText: isObscurePassword,
-                      validator: (value) =>
-                      value == null || value.length < 6 ? 'Password must be at least 6 characters' : null,
-                    ),
+
+                  SizedBox(height: 10),
+
+                  // Confirm Password
+                  _buildTextField(
+                    controller: confirmPasswordController,
+                    hint: "Confirm Password",
+                    icon: Icons.lock,
+                    isPassword: true,
+                    validator: (value) {
+                      if (value == null || value.length < 6) return 'Password must be at least 6 characters';
+                      if (value != passwordController.text) return 'Passwords do not match';
+                      return null;
+                    },
                   ),
-                ),
-                SizedBox(height: 10),
-                // Confirm Password
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: TextFormField(
-                      controller: confirmPasswordController,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.done,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          Icons.password,
-                          color: Colors.blue,
-                        ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                        suffixIcon: IconButton(
-                          onPressed: () => setState(() {
-                            isObscureConfirmPassword = !isObscureConfirmPassword;
-                          }),
-                          icon: Icon(isObscureConfirmPassword
-                              ? Icons.visibility_off
-                              : Icons.visibility),
-                        ),
-                        hintText: "Confirm Password",
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.black38, width: 2.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.blue, width: 2.0),
-                        ),
-                      ),
-                      obscureText: isObscureConfirmPassword,
-                      validator: (value) =>
-                      value == null || value.length < 6 ? 'Password must be at least 6 characters' : null,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 8),
-                // text account
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child: Row(
+
+                  SizedBox(height: 8),
+
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(
-                        "You have an account?",
-                        style: TextStyle(color: Colors.grey[700], fontSize: 16),
-                      ),
+                      Text("You have an account?", style: TextStyle(color: Colors.grey[700], fontSize: 16)),
                       SizedBox(width: 5),
                       GestureDetector(
-                        onTap: () {
-                          Navigator.pushReplacementNamed(context, '/login');
-                        },
-                        child: Text(
-                          'Login',
-                          style: TextStyle(
-                              color: Colors.blue,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      )
+                        onTap: () => Navigator.pushReplacementNamed(context, '/login'),
+                        child: Text('Login', style: TextStyle(color: Colors.blue, fontSize: 14, fontWeight: FontWeight.bold)),
+                      ),
                     ],
                   ),
-                ),
-                SizedBox(height: 25),
-                // button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child: isLoading ? Center(
-                    child: CircularProgressIndicator(),
-                  ) : GestureDetector(
+
+                  SizedBox(height: 25),
+
+                  isLoading ? Center(child: CircularProgressIndicator()) : GestureDetector(
                     onTap: () {
                       _signUp();
                     },
@@ -289,7 +160,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           color: Colors.blue,
                           borderRadius: BorderRadius.circular(10)),
                       child: Text(
-                        'Register',
+                        'register',
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -297,12 +168,58 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                     ),
                   ),
-                ),
-                SizedBox(height: 50,)
-              ],
+
+                  SizedBox(height: 50),
+                ],
+              ),
             ),
           ),
+        ),
       ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    TextInputType textInputType = TextInputType.emailAddress,
+    bool isPassword = false,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: textInputType,
+      obscureText: isPassword ? isObscurePassword : false,
+      textInputAction: TextInputAction.next,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: Colors.blue),
+        suffixIcon: isPassword
+            ? IconButton(
+          onPressed: () => setState(() {
+            if (controller == passwordController) {
+              isObscurePassword = !isObscurePassword;
+            } else {
+              isObscureConfirmPassword = !isObscureConfirmPassword;
+            }
+          }),
+          icon: Icon(controller == passwordController
+              ? (isObscurePassword ? Icons.visibility_off : Icons.visibility)
+              : (isObscureConfirmPassword ? Icons.visibility_off : Icons.visibility)),
+        )
+            : null,
+        hintText: hint,
+        contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.black38, width: 2.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.blue, width: 2.0),
+        ),
+      ),
+      validator: validator,
     );
   }
 }
