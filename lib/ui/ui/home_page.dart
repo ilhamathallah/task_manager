@@ -237,8 +237,16 @@ class _HomePageState extends State<HomePage> {
                       maxLines: 2,
                     ),
                     SizedBox(height: 10),
-                    Container(child: Text('low')),
                     Spacer(),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                          child: Text('low', style: TextStyle(fontSize: 13, color: Colors.blue, fontWeight: FontWeight.bold),),
+                        )),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Row(

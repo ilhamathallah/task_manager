@@ -47,9 +47,10 @@ class FirebaseService {
     return userDoc.data() as Map<String, dynamic>;
   }
 
-  Future<void> addTask(String title, String subtitle) async {
-    String? userId = _auth.currentUser!.uid;
-    DateTime time = new DateTime.now();
+  Future<void> addTask(String title, String subtitle, String priority) async {
+    String? userId = _auth.currentUser?.uid;
+    DateTime time = DateTime.now();
+
     if (userId != null) {
       await FirebaseFirestore.instance
           .collection('users')
@@ -58,12 +59,14 @@ class FirebaseService {
           .add({
         "title": title,
         "subtitle": subtitle,
+        "priority": priority, // Menyimpan priority
         "userId": userId,
         "time": '${time.hour}:${time.minute}',
-        "createdAt": FieldValue.serverTimestamp()
+        "createdAt": FieldValue.serverTimestamp(),
       });
     }
   }
+
 
   Stream<QuerySnapshot> getTask() {
     String? userId = _auth.currentUser!.uid;
