@@ -45,7 +45,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-
     return FutureBuilder<Map<String, dynamic>>(
         future: userData,
         builder: (context, snapshot) {
@@ -125,36 +124,38 @@ class _HomePageState extends State<HomePage> {
               },
               child: Expanded(
                 child: StreamBuilder<QuerySnapshot>(
-                  stream: _firebaseService.getTask(),
-                  builder: (context, snapshot){
-                    if(snapshot.connectionState == ConnectionState.waiting){
-                      return Center(child: CircularProgressIndicator(),
-                      );
-                    }
-                    if(snapshot.hasError){
-                      return Center(child: Text('Error fetching data'));
-                    }
-                    if(!snapshot.hasData || snapshot.data!.docs.isEmpty){
-                      return Center(
-                        child: Text('No task found',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500
+                    stream: _firebaseService.getTask(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Error fetching data'));
+                      }
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return Center(
+                          child: Text(
+                            'No task found',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w500),
                           ),
-                        ),
-                      );
-                    }
-                    return ListView.builder(
-                      itemCount: snapshot.data!.docs.length,
-                        itemBuilder: (context, index){
-                        DocumentSnapshot document = snapshot.data!.docs[index];
-                        return Dismissible(key: UniqueKey(), onDismissed: (direction){
-                          _deleteTask(document.id);
-                        },
-                            child: cardTaskManager(document));
-                        });
-                  }
-                ),
+                        );
+                      }
+                      return ListView.builder(
+                          itemCount: snapshot.data!.docs.length,
+                          itemBuilder: (context, index) {
+                            DocumentSnapshot document =
+                                snapshot.data!.docs[index];
+                            return Dismissible(
+                                key: UniqueKey(),
+                                onDismissed: (direction) {
+                                  _deleteTask(document.id);
+                                },
+                                child: cardTaskManager(document));
+                          });
+                    }),
               ),
             )),
             floatingActionButton: Visibility(
@@ -178,11 +179,12 @@ class _HomePageState extends State<HomePage> {
 
   Widget cardTaskManager(DocumentSnapshot document) {
     var data = document.data() as Map<String, dynamic>;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
       child: Container(
         width: double.infinity,
-        height: 170,
+        height: 180,
         decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             color: Colors.white,
@@ -239,13 +241,20 @@ class _HomePageState extends State<HomePage> {
                     SizedBox(height: 10),
                     Spacer(),
                     Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(50),
-                      ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(50),
+                        ),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                          child: Text('low', style: TextStyle(fontSize: 13, color: Colors.blue, fontWeight: FontWeight.bold),),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 2),
+                          child: Text(
+                            data['priority'],
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold),
+                          ),
                         )),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -270,7 +279,9 @@ class _HomePageState extends State<HomePage> {
                                   SizedBox(width: 8),
                                   Text(
                                     data['time'] is Timestamp
-                                        ? DateFormat('HH:mm').format((data['time'] as Timestamp).toDate()) // Format hanya jam & menit
+                                        ? DateFormat('HH:mm').format((data[
+                                                'time'] as Timestamp)
+                                            .toDate()) // Format hanya jam & menit
                                         : (data['time'] ?? '--:--').toString(),
                                     style: TextStyle(
                                         color: Colors.white,
@@ -286,10 +297,10 @@ class _HomePageState extends State<HomePage> {
                             onTap: () {
                               Navigator.of(context).push(MaterialPageRoute(
                                   builder: (context) => EditPage(
-                                    taskId: document.id,
-                                    title: document['title'],
-                                    subtitle: document['subtitle'],
-                                  )));
+                                        taskId: document.id,
+                                        title: document['title'],
+                                        subtitle: document['subtitle'],
+                                      )));
                             },
                             child: Container(
                               width: 90,
@@ -332,5 +343,4 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
 }

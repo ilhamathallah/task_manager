@@ -12,13 +12,14 @@ class _AddPageState extends State<AddPage> {
   final subtitle = TextEditingController();
   final priority = TextEditingController();
   final FirebaseService _firebaseService = FirebaseService();
+  String _selectedPriority = "High";
 
   void _addTask() async {
     if (title.text.isNotEmpty && subtitle.text.isNotEmpty) {
       await _firebaseService.addTask(
         title.text,
         subtitle.text,
-        priority.text, // Tambahkan priority
+        _selectedPriority, // Tambahkan priority
       );
 
       _clearFields();
@@ -52,28 +53,37 @@ class _AddPageState extends State<AddPage> {
             SizedBox(height: 20),
             subtitleWidget(),
             SizedBox(height: 20),
-
-            // Perbaikan: Radio Button untuk Priority
-            // Padding(
-            //   padding: const EdgeInsets.symmetric(horizontal: 20),
-            //   child: Column(
-            //     crossAxisAlignment: CrossAxisAlignment.start,
-            //     children: [
-            //       Text("Priority:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            //       RadioListTile(
-            //         title: Text(''),
-            //         value: priority,
-            //         groupValue: priority,
-            //         onChanged: (value) {
-            //           setState(() => _selectedPriority = value.toString());
-            //         },
-            //       ),
-            //     ],
-            //   ),
-            // ),
-
+            _dropDown(),
+            SizedBox(height: 20),
             buttonAddCancel()
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dropDown() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      child: DropdownButtonFormField<String>(
+        value: _selectedPriority,
+        items: ["High", "Medium", "Low"]
+            .map(
+              (element) => DropdownMenuItem(
+            value: element,
+            child: Text(element),
+          ),
+        ).toList(),
+        onChanged: (String? value) {
+          setState(() {
+            _selectedPriority = value!;
+          });
+        },
+        decoration: InputDecoration(
+          labelText: "Priority",
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          filled: true,
+          fillColor: Colors.white,
         ),
       ),
     );
